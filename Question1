@@ -1,0 +1,149 @@
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.*;
+
+// Define a class to represent a node in the graph
+
+class Node {
+    String name;
+
+    Node(String name) {
+        this.name = name;
+    }
+}
+
+// Define a class to represent an edge between two nodes in the graph
+
+class Edge {
+    Node from; // Starting node of the edge
+    Node to;   // Ending node of the edge
+    double weight; // Weight or cost of traversing the edge
+
+    Edge(Node from, Node to, double weight) {
+        this.from = from;
+        this.to = to;
+        this.weight = weight;
+    }
+}
+
+// Define a class to represent the graph
+
+class Graph {
+    private Map<Node, List<Edge>> adjacencyMap; // Adjacency map to store the edges for each node
+
+    Graph() {
+        adjacencyMap = new HashMap<>(); // Initialize the adjacency map
+    }
+
+    // Method to add an edge to the graph
+    void addEdge(Node from, Node to, double weight) {
+        adjacencyMap.putIfAbsent(from, new ArrayList<>()); // Add starting node if not present
+        adjacencyMap.get(from).add(new Edge(from, to, weight)); // Add edge to the list of edges for the starting node
+    }
+
+    // Method to get the list of edges for a given node
+    List<Edge> getEdges(Node node) {
+        return adjacencyMap.getOrDefault(node, Collections.emptyList()); // Return the list of edges or an empty list if node not found
+    }
+}
+
+// Main class containing the program logic
+
+public class ShortestRoute {
+    private static Graph graph; // Declare a graph object to hold the graph data
+
+    // Main method to start the program
+
+    public static void main(String[] args) {
+        String jsonFilePath = "edges.json"; // Path to the JSON file containing edge data
+        String startNodeName = "C"; // Name of the starting node
+        String endNodeName = "F"; // Name of the ending node
+
+        graph = buildGraphFromJSON(jsonFilePath); // Build the graph from the JSON file
+
+        Node startNode = new Node(startNodeName); // Create a node object for the starting node
+        Node endNode = new Node(endNodeName); // Create a node object for the ending node
+
+        List<Node> shortestPath = findShortestPath(startNode, endNode); // Find the shortest path between the starting and ending nodes
+        List<String> shortestPathNames = getNodeNames(shortestPath); // Convert the nodes in the shortest path to their names
+
+        System.out.println(shortestPathNames); // Print the names of nodes in the shortest path
+    }
+
+    // Method to build the graph from JSON data
+
+    private static Graph buildGraphFromJSON(String jsonFilePath) {
+        Graph graph = new Graph(); // Create a new graph object
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(jsonFilePath)); // Open the JSON file for reading
+            Gson gson = new Gson(); // Create a Gson object for parsing JSON
+            Type edgeListType = new TypeToken<List<Edge>>() {}.getType(); // Define the type for parsing the list of edges
+            List<Edge> edges = gson.fromJson(reader, edgeListType); // Parse the JSON data into a list of edges
+            for (Edge edge : edges) {
+                graph.addEdge(edge.from, edge.to, edge.weight); // Add each edge to the graph
+            }
+            reader.close(); // Close the reader
+        } catch (IOException e) {
+            e.printStackTrace(); // Handle IO exception
+        }
+        return graph; // Return the constructed graph
+    }
+
+    // Method to find the shortest path between two nodes using Dijkstra's algorithm
+
+private static List<Node> findShortestPath(Node start, Node end) {
+    Map<Node, Double> distance = new HashMap<>(); // Map to store the distance from the start node to each node
+    Map<Node, Node> previous = new HashMap<>(); // Map to store the previous node on the shortest path to each node
+    PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingDouble(distance::get)); // Priority queue to process nodes based on their distances
+
+    // Initialize distances to infinity and previous nodes to null
+    for (Node node : graph.adjacencyMap.keySet()) {
+        distance.put(node, Double.POSITIVE_INFINITY);
+        previous.put(node, null);
+    }
+
+    distance.put(start, 0.0); // Distance from start node to itself is 0
+    queue.add(start); // Add the start node to the queue
+
+    // Dijkstra's algorithm
+    while (!queue.isEmpty()) {
+        Node current = queue.poll(); // Get the node with the smallest distance from the queue
+        if (current.equals(end)) {
+            break; // If we've reached the end node, exit the loop
+        }
+        for (Edge edge : graph.getEdges(current)) {
+            double newDist = distance.get(current) + edge.weight; // Calculate the new distance to the neighbor node
+            if (newDist < distance.get(edge.to)) { // If the new distance is shorter than the current distance
+                distance.put(edge.to, newDist); // Update the distance
+                previous.put(edge.to, current); // Update the previous node
+                queue.add(edge.to); // Add the neighbor node to the queue
+            }
+        }
+    }
+
+    // Reconstruct the shortest path
+    List<Node> shortestPath = new ArrayList<>();
+    Node current = end;
+    while (current != null) {
+        shortestPath.add(0, current); // Add each node to the beginning of the list
+        current = previous.get(current); // Move to the previous node
+    }
+
+    return shortestPath;
+}
+
+
+    // Method to convert a list of nodes to their names
+    private static List<String> getNodeNames(List<Node> nodes) {
+        List<String> nodeNames = new ArrayList<>(); // Create a list to store node names
+        for (Node node : nodes) {
+            nodeNames.add(node.name); // Add the name of each node to the list
+        }
+        return nodeNames; // Return the list of node names
+    }
+}
