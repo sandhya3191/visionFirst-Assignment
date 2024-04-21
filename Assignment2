@@ -1,0 +1,82 @@
+import com.google.gson.Gson; // Import Gson library for JSON serialization
+
+import java.util.*;
+
+// Class to represent a node in the graph
+class Node {
+    String name; // Name of the node
+
+    Node(String name) {
+        this.name = name;
+    }
+}
+
+// Class to represent an edge between two nodes in the graph
+class Edge {
+    String from; // Starting node of the edge
+    String to;   // Ending node of the edge
+    double cost; // Cost or distance of traversing the edge
+
+    Edge(String from, String to, double cost) {
+        this.from = from;
+        this.to = to;
+        this.cost = cost;
+    }
+}
+
+public class DataGenerator {
+    private static Random random; // Random number generator
+
+    public static void main(String[] args) {
+        String email = "abc@email.com"; // Example email ID
+        List<Node> nodes = generateNodes(email); // Generate nodes based on email ID
+        List<Edge> edges = generateEdges(nodes); // Generate edges between nodes
+
+        // Print the generated nodes and edges
+        System.out.println("Nodes: " + nodes);
+        System.out.println("Edges: ");
+        for (Edge edge : edges) {
+            System.out.println(edge);
+        }
+    }
+
+    // Method to generate nodes based on the email ID
+    private static List<Node> generateNodes(String email) {
+        random = new Random(email.hashCode()); // Create a random number generator based on email hash code
+        int numNodes = 2 + random.nextInt(5); // Generate 2 to 6 nodes based on email hash
+        List<Node> nodes = new ArrayList<>(); // List to store generated nodes
+        for (int i = 0; i < numNodes; i++) {
+            String nodeName = generateNodeName(); // Generate a unique node name
+            nodes.add(new Node(nodeName)); // Add the node to the list
+        }
+        return nodes; // Return the list of generated nodes
+    }
+
+    // Method to generate a unique node name
+    private static String generateNodeName() {
+        char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray(); // Array of uppercase alphabets
+        StringBuilder sb = new StringBuilder();
+        sb.append(chars[random.nextInt(chars.length)]); // Append a random character
+        sb.append(chars[random.nextInt(chars.length)]); // Append another random character
+        return sb.toString(); // Return the generated node name
+    }
+
+    // Method to generate edges between nodes
+    private static List<Edge> generateEdges(List<Node> nodes) {
+        List<Edge> edges = new ArrayList<>(); // List to store generated edges
+        Set<String> uniquePairs = new HashSet<>(); // Set to ensure unique pairs of nodes
+        for (Node fromNode : nodes) {
+            for (Node toNode : nodes) {
+                if (!fromNode.name.equals(toNode.name)) { // Ensure different starting and ending nodes
+                    String pair = fromNode.name + "-" + toNode.name; // Create a unique pair identifier
+                    if (!uniquePairs.contains(pair)) { // Check if the pair is not already generated
+                        double cost = 1 + random.nextDouble() * 4.5; // Generate cost between 1 and 5
+                        edges.add(new Edge(fromNode.name, toNode.name, cost)); // Add the edge to the list
+                        uniquePairs.add(pair); // Add the pair to the set
+                    }
+                }
+            }
+        }
+        return edges; // Return the list of generated edges
+    }
+}
